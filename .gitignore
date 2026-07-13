@@ -1,0 +1,35 @@
+# Python virtual environments (setup.sh가 생성)
+venv/
+venv-quant/
+.venv/
+
+# Python 캐시
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# 학습 산출물 / 체크포인트
+outputs/
+checkpoints/
+runs/
+wandb/
+*.bin
+*.safetensors
+*.pt
+*.ckpt
+
+# OS / 에디터
+.DS_Store
+.vscode/
+.idea/
+
+# 로컬 전용 (푸시 금지)
+CLAUDE.md
+
+# 환경 변수 / 시크릿
+.env
+.env.*
+!.env.example
