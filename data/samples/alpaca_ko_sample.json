@@ -1,0 +1,252 @@
+[
+  {
+    "instruction": "LoRA 파인튜닝이 무엇인지 설명하세요.",
+    "input": "",
+    "output": "LoRA(Low-Rank Adaptation)는 대규모 언어 모델을 효율적으로 파인튜닝하기 위한 기법입니다. 기존 모델의 가중치를 동결(freeze)하고, 각 레이어에 작은 저랭크(low-rank) 행렬 A와 B를 추가하여 학습합니다. 전체 파라미터의 약 1% 미만만 학습하면서도 풀 파인튜닝에 근접한 성능을 달성할 수 있습니다. 핵심 수식은 W' = W + BA이며, r(랭크)값이 작을수록 학습 파라미터가 줄어듭니다. RTX 4060(8GB) 같은 소비자용 GPU에서도 7B 모델을 파인튜닝할 수 있다는 것이 최대 장점입니다."
+  },
+  {
+    "instruction": "LoRA에서 rank(r)를 높이면 어떤 효과가 있나요?",
+    "input": "",
+    "output": "LoRA에서 rank(r)를 높이면 학습 가능한 파라미터 수가 증가합니다. r=8이면 적은 패턴만 학습하고, r=16이나 r=32로 높이면 더 복잡한 패턴을 포착할 수 있습니다. 하지만 r을 너무 높이면 과적합 위험이 있고 GPU 메모리 사용량도 증가합니다. 일반적으로 r=16, lora_alpha=32 조합이 성능과 효율의 균형점으로 권장됩니다."
+  },
+  {
+    "instruction": "QLoRA가 일반 LoRA와 어떻게 다른가요?",
+    "input": "",
+    "output": "QLoRA는 LoRA에 양자화(Quantization)를 결합한 기법입니다. 기본 모델을 NF4(4비트)로 양자화하여 로드한 뒤, LoRA 어댑터만 FP16이나 BF16으로 학습합니다. 일반 LoRA는 모델을 FP16으로 로드하므로 VRAM을 더 많이 사용합니다. QLoRA를 사용하면 7B 모델도 8GB VRAM GPU에서 파인튜닝할 수 있어 자원이 제한된 환경에서 매우 유용합니다. BitsAndBytes 라이브러리의 bnb_4bit_quant_type='nf4' 설정으로 구현합니다."
+  },
+  {
+    "instruction": "파인튜닝과 프롬프트 엔지니어링의 차이점을 설명하세요.",
+    "input": "",
+    "output": "파인튜닝은 모델의 가중치를 직접 수정하여 특정 태스크에 최적화하는 방법입니다. 학습 데이터와 GPU가 필요하지만 모델이 태스크를 깊이 이해하게 됩니다. 반면 프롬프트 엔지니어링은 모델 가중치를 변경하지 않고, 입력 프롬프트를 설계하여 원하는 출력을 유도합니다. 별도의 학습이 필요 없지만 복잡한 태스크에서는 한계가 있습니다. 실무에서는 프롬프트 엔지니어링으로 시작하고, 성능이 부족하면 파인튜닝을 적용하는 것이 일반적입니다."
+  },
+  {
+    "instruction": "SFT(Supervised Fine-Tuning)란 무엇인가요?",
+    "input": "",
+    "output": "SFT는 지도 학습 기반 파인튜닝으로, 사람이 작성한 고품질 instruction-response 쌍으로 모델을 학습시키는 방법입니다. 사전학습(Pre-training)된 모델에 특정 태스크의 데이터를 추가 학습시켜 성능을 향상시킵니다. HuggingFace의 SFTTrainer를 사용하면 간편하게 구현할 수 있으며, ChatML 형식의 대화 데이터로 학습하는 것이 일반적입니다."
+  },
+  {
+    "instruction": "PEFT(Parameter-Efficient Fine-Tuning)의 종류를 설명하세요.",
+    "input": "",
+    "output": "PEFT는 전체 파라미터 중 일부만 학습하는 효율적인 파인튜닝 기법의 총칭입니다. 주요 방법으로는 LoRA(저랭크 행렬 추가), Prefix Tuning(입력 앞에 학습 가능한 토큰 추가), Adapter(레이어 사이에 작은 네트워크 삽입), IA3(활성화 값에 학습 가능한 스케일링 벡터 추가) 등이 있습니다. 이 중 LoRA가 가장 널리 사용되며, 성능 대비 효율이 뛰어납니다."
+  },
+  {
+    "instruction": "Full Fine-Tuning(FFT)과 LoRA의 차이를 비교하세요.",
+    "input": "",
+    "output": "FFT는 모델의 모든 파라미터를 학습하는 방식으로, 최고 성능을 달성할 수 있지만 GPU 메모리를 많이 사용합니다. 1.5B 모델 FFT에 약 12GB, 7B 모델에는 56GB 이상이 필요합니다. LoRA는 전체의 약 1%만 학습하므로 메모리를 크게 절약합니다. 7B 모델도 8GB GPU에서 QLoRA로 학습 가능합니다. 성능 차이는 일반적으로 1-3% 이내로, 대부분의 실무 상황에서 LoRA가 효율적입니다."
+  },
+  {
+    "instruction": "LoRA 어댑터를 모델에 병합(merge)하는 방법을 설명하세요.",
+    "input": "",
+    "output": "LoRA 어댑터 병합은 학습된 LoRA 가중치를 원본 모델에 합치는 과정입니다. PEFT 라이브러리의 merge_and_unload() 메서드를 사용합니다. 코드 예시: model = PeftModel.from_pretrained(base_model, adapter_path) → merged = model.merge_and_unload() → merged.save_pretrained(output_path). 병합 후에는 LoRA 없이 일반 모델처럼 사용할 수 있어 추론 속도가 빨라집니다."
+  },
+  {
+    "instruction": "gradient_checkpointing이 무엇인가요?",
+    "input": "",
+    "output": "gradient checkpointing은 GPU 메모리를 절약하는 기법입니다. 일반적으로 역전파(backpropagation) 시 순전파의 중간 활성화(activation) 값을 모두 저장하지만, gradient checkpointing은 일부만 저장하고 나머지는 역전파 시 다시 계산합니다. 메모리 사용량을 약 60%까지 줄일 수 있지만, 재계산으로 인해 학습 속도가 약 20% 느려집니다. model.gradient_checkpointing_enable()로 활성화합니다."
+  },
+  {
+    "instruction": "lora_alpha와 r의 관계를 설명하세요.",
+    "input": "",
+    "output": "lora_alpha는 LoRA의 스케일링 팩터로, 실제 적용되는 가중치는 (alpha/r) * BA입니다. r=16, alpha=32이면 스케일링 비율이 2배가 됩니다. alpha를 r의 2배로 설정하는 것이 일반적인 관행입니다. alpha가 높으면 LoRA의 영향력이 커지고, 낮으면 원본 모델에 가깝게 유지됩니다. 학습률(learning rate)과 함께 조정해야 하며, alpha가 크면 학습률을 낮추는 것이 좋습니다."
+  },
+  {
+    "instruction": "GPU 메모리가 부족할 때 해결 방법을 알려주세요.",
+    "input": "",
+    "output": "GPU 메모리 부족 해결 방법: 1) batch_size를 1로 줄이고 gradient_accumulation_steps를 8~16으로 설정합니다. 2) max_seq_length를 512나 1024로 제한합니다. 3) gradient_checkpointing=True를 설정합니다. 4) 4bit 양자화(BitsAndBytes)를 적용합니다. 5) 불필요한 GPU 프로세스를 종료합니다(nvidia-smi로 확인). 6) torch.cuda.empty_cache()로 캐시를 정리합니다. 7) 더 작은 모델을 사용합니다(7B→3B→1.5B)."
+  },
+  {
+    "instruction": "CUDA out of memory 에러가 발생했을 때 어떻게 하나요?",
+    "input": "",
+    "output": "CUDA OOM 에러는 GPU 메모리가 부족할 때 발생합니다. 즉시 해결법: batch_size=1로 줄이기, gradient_checkpointing 활성화, 4bit 양자화 적용. 코드에서 torch.cuda.empty_cache()와 gc.collect()로 메모리를 정리할 수 있습니다. nvidia-smi 명령으로 다른 프로세스가 GPU를 사용하고 있는지 확인하고, 불필요한 프로세스를 kill하세요."
+  },
+  {
+    "instruction": "mixed precision training이 무엇인가요?",
+    "input": "",
+    "output": "Mixed precision training은 FP32와 FP16(또는 BF16)을 혼합하여 학습하는 기법입니다. 순전파와 역전파는 FP16으로 수행하여 속도를 높이고, 가중치 업데이트는 FP32로 수행하여 정밀도를 유지합니다. GPU 메모리를 약 50% 절약하면서 학습 속도도 향상됩니다. PyTorch에서는 TrainingArguments에 fp16=True 또는 bf16=True로 설정합니다. Ampere 이상 GPU(A100, RTX 3090)에서는 bf16이 더 안정적입니다."
+  },
+  {
+    "instruction": "gradient accumulation이 무엇인가요?",
+    "input": "",
+    "output": "Gradient accumulation은 작은 배치를 여러 번 처리한 후 한 번에 가중치를 업데이트하는 기법입니다. 예를 들어 batch_size=1, gradient_accumulation_steps=8이면 실효 배치 크기는 8이 됩니다. GPU 메모리가 부족하여 큰 배치를 사용할 수 없을 때 유용합니다. 학습 품질은 큰 배치와 유사하게 유지하면서 메모리 사용량은 작은 배치 수준으로 줄일 수 있습니다."
+  },
+  {
+    "instruction": "RTX 4060(8GB)에서 학습 가능한 모델 크기는?",
+    "input": "",
+    "output": "RTX 4060(8GB VRAM)에서의 학습 가능 범위: LoRA는 1.5B~3B 모델까지, QLoRA는 7B 모델까지 빠듯하게 가능합니다. FFT(Full Fine-Tuning)는 1.5B까지만 가능합니다. 권장 설정: batch_size=1, gradient_accumulation_steps=8, max_seq_length=1024, gradient_checkpointing=True, 4bit 양자화 필수입니다."
+  },
+  {
+    "instruction": "nvidia-smi 명령어로 확인할 수 있는 정보는?",
+    "input": "",
+    "output": "nvidia-smi는 NVIDIA GPU 상태를 모니터링하는 명령어입니다. 확인 가능한 정보: GPU 이름과 드라이버 버전, GPU 온도, GPU 사용률(%), 메모리 사용량(사용 중/전체), 실행 중인 프로세스(PID, 프로세스명, 메모리 사용량). 실시간 모니터링: watch -n 1 nvidia-smi. Python에서: torch.cuda.memory_allocated()와 torch.cuda.get_device_properties(0).total_memory로 확인할 수 있습니다."
+  },
+  {
+    "instruction": "BitsAndBytes 4bit 양자화 설정을 설명하세요.",
+    "input": "",
+    "output": "BitsAndBytes 4bit 양자화 설정: BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type='nf4', bnb_4bit_compute_dtype=torch.bfloat16, bnb_4bit_use_double_quant=True). nf4는 Normal Float 4로 정규분포에 최적화된 양자화입니다. compute_dtype은 계산 시 사용할 정밀도이며, bfloat16이 안정적입니다. double_quant=True로 양자화 상수도 양자화하여 추가 메모리를 절약합니다."
+  },
+  {
+    "instruction": "모델 학습 시 적절한 learning rate는?",
+    "input": "",
+    "output": "LoRA 파인튜닝 시 일반적인 learning rate 범위는 1e-4 ~ 3e-4입니다. 2e-4가 가장 많이 사용됩니다. FFT는 이보다 낮은 1e-5 ~ 5e-5를 사용합니다. learning rate가 너무 높으면 발산하고, 너무 낮으면 학습이 느립니다. cosine 스케줄러와 warmup_ratio=0.03~0.1을 함께 사용하는 것이 권장됩니다. AdamW 옵티마이저가 표준이며, 8bit Adam으로 메모리를 절약할 수 있습니다."
+  },
+  {
+    "instruction": "VRAM과 RAM의 차이는 무엇인가요?",
+    "input": "",
+    "output": "VRAM(Video RAM)은 GPU에 장착된 메모리로, GPU 연산에 사용됩니다. RAM(System RAM)은 CPU가 사용하는 시스템 메모리입니다. LLM 학습 시 모델 가중치, 옵티마이저 상태, 활성화 값이 VRAM에 올라갑니다. VRAM이 부족하면 CUDA OOM 에러가 발생합니다. CPU offloading으로 일부 데이터를 RAM으로 옮길 수 있지만 속도가 느려집니다."
+  },
+  {
+    "instruction": "torch.cuda.empty_cache()는 무엇인가요?",
+    "input": "",
+    "output": "torch.cuda.empty_cache()는 PyTorch가 캐싱한 미사용 GPU 메모리를 해제하는 함수입니다. PyTorch는 성능을 위해 할당했던 메모리를 즉시 해제하지 않고 캐싱합니다. 이 함수를 호출하면 캐시된 메모리가 반환되어 다른 용도로 사용할 수 있습니다. 단, 현재 사용 중인 텐서의 메모리는 해제하지 않습니다. gc.collect()와 함께 사용하면 더 효과적입니다."
+  },
+  {
+    "instruction": "트랜스포머의 Self-Attention 메커니즘을 설명하세요.",
+    "input": "",
+    "output": "Self-Attention은 입력 시퀀스의 각 토큰이 다른 모든 토큰과의 관련성을 계산하는 메커니즘입니다. 각 토큰을 Query(Q), Key(K), Value(V) 벡터로 변환합니다. Attention(Q,K,V) = softmax(QK^T / √d_k) × V 공식으로 계산합니다. Q와 K의 내적으로 유사도를 구하고, softmax로 가중치를 만든 후, V를 가중합합니다. 이를 통해 '고양이가 매트 위에 앉았다'에서 '앉았다'가 '고양이'와 높은 관련성을 가진다는 것을 학습합니다."
+  },
+  {
+    "instruction": "Multi-Head Attention을 사용하는 이유를 설명하세요.",
+    "input": "",
+    "output": "Multi-Head Attention은 하나의 Attention 대신 여러 개의 Attention 헤드를 병렬로 사용하는 기법입니다. 각 헤드가 서로 다른 관점에서 토큰 간 관계를 포착합니다. 예를 들어 한 헤드는 문법적 관계(주어-동사)를, 다른 헤드는 의미적 관계(동의어, 상하위어)를 학습합니다. 일반적으로 Qwen2.5-1.5B는 16개 헤드, 7B는 28개 헤드를 사용합니다. 여러 관점의 정보를 종합하여 더 풍부한 표현을 학습합니다."
+  },
+  {
+    "instruction": "Causal Language Model이 무엇인가요?",
+    "input": "",
+    "output": "Causal Language Model(CLM)은 이전 토큰들만 참조하여 다음 토큰을 예측하는 모델입니다. 왼쪽에서 오른쪽으로만 보는 단방향(unidirectional) 모델입니다. GPT, LLaMA, Qwen 등이 이 방식을 사용합니다. Causal Attention Mask로 미래 토큰을 가려서 학습합니다. 반면 BERT는 양방향(bidirectional)으로, 앞뒤 토큰을 모두 참조합니다. 텍스트 생성에는 CLM이 적합합니다."
+  },
+  {
+    "instruction": "Positional Encoding이 왜 필요한가요?",
+    "input": "",
+    "output": "트랜스포머는 RNN과 달리 순서 정보가 없습니다. Self-Attention은 토큰의 위치에 관계없이 모든 토큰 쌍을 동시에 처리합니다. 따라서 '고양이가 개를 쫓았다'와 '개가 고양이를 쫓았다'를 구분하지 못합니다. Positional Encoding은 각 위치에 고유한 벡터를 더하여 순서 정보를 제공합니다. 원래 트랜스포머는 사인/코사인 함수를 사용했고, 최신 모델은 RoPE(Rotary Position Embedding) 같은 방식을 사용합니다."
+  },
+  {
+    "instruction": "트랜스포머의 Feed-Forward Network(FFN)의 역할은?",
+    "input": "",
+    "output": "FFN은 트랜스포머 각 레이어에서 Attention 이후에 적용되는 2층 신경망입니다. 구조: FFN(x) = W2 × activation(W1 × x + b1) + b2. Attention이 토큰 간 관계를 포착한다면, FFN은 각 토큰의 표현을 비선형 변환하여 더 풍부한 특징을 추출합니다. 최신 모델(LLaMA, Qwen)은 SwiGLU 활성화 함수를 사용하며, gate_proj, up_proj, down_proj 3개의 가중치 행렬을 사용합니다."
+  },
+  {
+    "instruction": "KV Cache가 무엇이고 왜 중요한가요?",
+    "input": "",
+    "output": "KV Cache는 추론 시 이전에 계산한 Key와 Value 벡터를 캐싱하는 기법입니다. 자동회귀 생성에서 새 토큰을 생성할 때마다 이전 토큰의 K, V를 다시 계산하지 않고 캐시에서 가져옵니다. 이로 인해 추론 속도가 크게 향상됩니다. 단, 시퀀스가 길어질수록 캐시 크기가 커져 메모리를 많이 사용합니다. 학습 시에는 gradient_checkpointing과 충돌하므로 use_cache=False로 설정합니다."
+  },
+  {
+    "instruction": "토큰화(Tokenization)란 무엇인가요?",
+    "input": "",
+    "output": "토큰화는 텍스트를 모델이 처리할 수 있는 숫자(토큰 ID)로 변환하는 과정입니다. BPE(Byte-Pair Encoding)가 가장 많이 사용되는 방식으로, 자주 등장하는 문자 쌍을 반복적으로 병합하여 어휘를 구성합니다. 한국어는 UTF-8에서 글자당 3바이트로 인코딩되어 영어보다 토큰 효율이 낮습니다. '안녕하세요'가 2~3토큰, 'Hello'가 1토큰 정도입니다. Qwen의 어휘 크기는 약 15만 개입니다."
+  },
+  {
+    "instruction": "temperature 파라미터가 텍스트 생성에 미치는 영향은?",
+    "input": "",
+    "output": "temperature는 텍스트 생성 시 다음 토큰 선택의 무작위성을 조절합니다. temperature=0이면 항상 가장 높은 확률의 토큰을 선택(greedy)하여 일관된 출력을 생성합니다. temperature=1.0이면 원래 확률 분포대로 샘플링합니다. temperature>1.0이면 더 다양하고 창의적인 출력을 생성하지만 품질이 떨어질 수 있습니다. 일반적으로 0.7~0.9가 품질과 다양성의 균형점입니다."
+  },
+  {
+    "instruction": "top_p(nucleus sampling)란 무엇인가요?",
+    "input": "",
+    "output": "top_p는 누적 확률이 p를 넘지 않는 토큰들만 후보로 선택하는 샘플링 방법입니다. top_p=0.9이면 확률 상위 90%에 해당하는 토큰들 중에서 샘플링합니다. top_k와 달리 확률 분포에 따라 후보 수가 동적으로 변합니다. 확신이 높은 경우 소수 토큰만, 불확실한 경우 많은 토큰이 후보가 됩니다. temperature와 함께 사용하여 생성 품질을 조절합니다."
+  },
+  {
+    "instruction": "Embedding이 무엇인가요?",
+    "input": "",
+    "output": "Embedding은 이산적인 토큰(단어, 서브워드)을 연속적인 벡터 공간의 밀집 벡터로 변환하는 것입니다. 각 토큰 ID가 고정된 차원(예: 1536차원)의 벡터에 매핑됩니다. 의미적으로 유사한 단어는 벡터 공간에서 가까이 위치합니다. 트랜스포머의 첫 번째 레이어가 Embedding 레이어이며, 토큰 ID를 입력받아 벡터를 출력합니다. 이 벡터가 이후 Attention과 FFN 레이어를 통과합니다."
+  },
+  {
+    "instruction": "Python에서 리스트와 튜플의 차이점을 설명하세요.",
+    "input": "",
+    "output": "리스트(list)는 변경 가능한(mutable) 자료구조로, 요소를 추가/삭제/수정할 수 있습니다. 대괄호 []로 생성합니다. 튜플(tuple)은 변경 불가능한(immutable) 자료구조로, 생성 후 수정할 수 없습니다. 소괄호 ()로 생성합니다. 튜플은 변경 불가하므로 딕셔너리의 키로 사용할 수 있고, 리스트보다 메모리 효율이 좋습니다. 좌표나 설정값처럼 변경되지 않는 데이터에는 튜플을 사용합니다."
+  },
+  {
+    "instruction": "Python의 가상환경(virtual environment)이 왜 필요한가요?",
+    "input": "",
+    "output": "가상환경은 프로젝트별로 독립된 Python 패키지 환경을 만들어줍니다. 프로젝트 A에서는 torch 2.0을, 프로젝트 B에서는 torch 1.13을 사용할 수 있습니다. 패키지 버전 충돌을 방지하고 프로젝트 간 의존성을 격리합니다. python -m venv myenv로 생성하고, source myenv/bin/activate로 활성화합니다. pip freeze > requirements.txt로 패키지 목록을 저장하고 재현할 수 있습니다."
+  },
+  {
+    "instruction": "Python에서 리스트 컴프리헨션의 사용법을 설명하세요.",
+    "input": "",
+    "output": "리스트 컴프리헨션은 리스트를 간결하게 생성하는 문법입니다. 기본 형태: [표현식 for 변수 in 반복가능객체]. 예시: squares = [x**2 for x in range(10)]은 0~9의 제곱수 리스트를 생성합니다. 조건 추가: [x for x in range(20) if x % 2 == 0]은 짝수만 선택합니다. 중첩도 가능: [(x, y) for x in range(3) for y in range(3)]. for 루프보다 간결하고 빠르지만, 복잡한 로직에는 가독성이 떨어질 수 있습니다."
+  },
+  {
+    "instruction": "Python에서 딕셔너리와 리스트의 차이를 설명하세요.",
+    "input": "",
+    "output": "리스트는 순서가 있는 데이터 모음으로, 인덱스(정수)로 접근합니다. 예: my_list[0]. 딕셔너리는 키-값 쌍으로 데이터를 저장하며, 키(문자열, 숫자 등)로 접근합니다. 예: my_dict['name']. 딕셔너리는 해시 테이블 기반이라 검색이 O(1)로 빠르고, 리스트는 O(n)입니다. 리스트는 순서가 중요한 데이터에, 딕셔너리는 레이블이 있는 데이터에 적합합니다."
+  },
+  {
+    "instruction": "Python에서 예외 처리(try-except)를 설명하세요.",
+    "input": "",
+    "output": "try-except는 코드 실행 중 발생하는 에러를 처리하는 구문입니다. try 블록에 에러가 발생할 수 있는 코드를 넣고, except 블록에서 에러를 처리합니다. 예: try: result = 10/0 except ZeroDivisionError: print('0으로 나눌 수 없습니다'). finally 블록은 에러 여부와 관계없이 항상 실행됩니다. 여러 종류의 에러를 각각 처리할 수도 있고, Exception으로 모든 에러를 잡을 수도 있습니다."
+  },
+  {
+    "instruction": "Python의 데코레이터(@decorator)란 무엇인가요?",
+    "input": "",
+    "output": "데코레이터는 함수를 감싸서 추가 기능을 부여하는 문법입니다. @기호를 함수 정의 위에 붙여 사용합니다. 예를 들어 @timer 데코레이터는 함수 실행 시간을 측정할 수 있습니다. 내부적으로 원래 함수를 인자로 받아 새로운 함수를 반환하는 고차 함수입니다. FastAPI의 @app.get('/'), PyTorch의 @torch.no_grad() 등이 대표적인 데코레이터 활용 예시입니다."
+  },
+  {
+    "instruction": "Python에서 제너레이터(generator)란 무엇인가요?",
+    "input": "",
+    "output": "제너레이터는 값을 한 번에 하나씩 생성하는 이터레이터입니다. yield 키워드를 사용하여 함수가 값을 반환하면서도 상태를 유지합니다. 리스트와 달리 모든 값을 메모리에 올리지 않으므로, 대용량 데이터 처리에 효율적입니다. 예: def count(n): for i in range(n): yield i. 100만 개의 데이터도 메모리 걱정 없이 순회할 수 있습니다."
+  },
+  {
+    "instruction": "pip install과 conda install의 차이는?",
+    "input": "",
+    "output": "pip는 Python 전용 패키지 관리자로, PyPI(Python Package Index)에서 패키지를 설치합니다. conda는 Anaconda/Miniconda의 패키지 관리자로, Python 외에 C/C++ 라이브러리도 관리합니다. pip는 가벼우면서 대부분의 Python 패키지를 지원합니다. conda는 과학 컴퓨팅 패키지의 의존성 해결이 뛰어나지만 무겁습니다. 실무에서는 pip + venv 조합이 많이 사용됩니다."
+  },
+  {
+    "instruction": "Python의 f-string 사용법을 알려주세요.",
+    "input": "",
+    "output": "f-string은 Python 3.6+에서 지원하는 문자열 포맷팅 방법입니다. 문자열 앞에 f를 붙이고 중괄호 {}에 변수나 표현식을 넣습니다. 예: name='Kim'; print(f'Hello {name}'). 소수점 포맷: f'{3.14159:.2f}' → '3.14'. 정렬: f'{name:>10}' → 오른쪽 정렬. 계산: f'{2**10}' → '1024'. .format()이나 % 포맷팅보다 가독성이 좋고 속도도 빠릅니다."
+  },
+  {
+    "instruction": "Python에서 with 문이 왜 사용되나요?",
+    "input": "",
+    "output": "with 문은 리소스의 획득과 해제를 자동으로 관리하는 컨텍스트 매니저입니다. 가장 대표적인 예가 파일 처리입니다: with open('file.txt', 'r') as f: data = f.read(). with 블록을 벗어나면 자동으로 f.close()가 호출됩니다. 예외가 발생해도 리소스가 반드시 해제됩니다. 파일 외에도 데이터베이스 연결, GPU 메모리 관리(torch.no_grad()) 등에 사용됩니다."
+  },
+  {
+    "instruction": "다음 문장을 영어로 번역하세요.",
+    "input": "오늘 날씨가 정말 좋습니다.",
+    "output": "The weather is really nice today."
+  },
+  {
+    "instruction": "다음 문장을 영어로 번역하세요.",
+    "input": "인공지능은 우리의 일상생활을 크게 변화시키고 있습니다.",
+    "output": "Artificial intelligence is greatly changing our daily lives."
+  },
+  {
+    "instruction": "다음 문장을 영어로 번역하세요.",
+    "input": "딥러닝 모델을 학습시키려면 대량의 데이터와 강력한 GPU가 필요합니다.",
+    "output": "Training a deep learning model requires a large amount of data and a powerful GPU."
+  },
+  {
+    "instruction": "다음 문장을 영어로 번역하세요.",
+    "input": "파이썬은 배우기 쉽고 강력한 프로그래밍 언어입니다.",
+    "output": "Python is an easy-to-learn and powerful programming language."
+  },
+  {
+    "instruction": "다음 문장을 영어로 번역하세요.",
+    "input": "이 모델은 한국어 질문에 정확하게 답변할 수 있습니다.",
+    "output": "This model can accurately answer questions in Korean."
+  },
+  {
+    "instruction": "과적합(Overfitting)이 무엇이고 어떻게 방지하나요?",
+    "input": "",
+    "output": "과적합은 모델이 학습 데이터에 너무 잘 맞춰져서 새로운 데이터에 대한 예측 성능이 떨어지는 현상입니다. 방지 방법: 1) 더 많은 학습 데이터 확보, 2) Dropout 적용, 3) 조기 종료(Early Stopping), 4) 데이터 증강(Data Augmentation), 5) 정규화(L1/L2 Regularization), 6) LoRA의 경우 lora_dropout 설정. 학습 loss는 감소하지만 검증 loss가 증가하면 과적합 신호입니다."
+  },
+  {
+    "instruction": "RAG(Retrieval-Augmented Generation)란 무엇인가요?",
+    "input": "",
+    "output": "RAG는 검색(Retrieval)과 생성(Generation)을 결합한 방법입니다. 사용자 질문이 들어오면, 먼저 벡터 데이터베이스에서 관련 문서를 검색하고, 검색된 문서를 컨텍스트로 LLM에 전달하여 답변을 생성합니다. 파인튜닝 없이 최신 정보나 도메인 지식을 활용할 수 있다는 장점이 있습니다. ChromaDB, FAISS 같은 벡터 DB와 함께 사용하며, LangChain으로 쉽게 구현할 수 있습니다."
+  },
+  {
+    "instruction": "배치 정규화(Batch Normalization)의 역할을 설명하세요.",
+    "input": "",
+    "output": "배치 정규화는 미니배치 단위로 각 레이어의 입력을 정규화하는 기법입니다. 평균을 0, 분산을 1로 맞추어 내부 공변량 변화(Internal Covariate Shift)를 줄입니다. 효과: 학습 속도 향상, 더 큰 learning rate 사용 가능, 초기값 민감도 감소, 약간의 정규화 효과. 트랜스포머에서는 배치 정규화 대신 Layer Normalization을 사용합니다."
+  },
+  {
+    "instruction": "DPO(Direct Preference Optimization)란 무엇인가요?",
+    "input": "",
+    "output": "DPO는 인간의 선호도 데이터를 직접 사용하여 모델을 최적화하는 강화학습 기법입니다. 기존 RLHF는 별도의 Reward Model을 학습한 뒤 PPO로 정책을 최적화하는 복잡한 과정이 필요했습니다. DPO는 이를 단일 단계로 단순화하여, chosen(선호 응답)과 rejected(비선호 응답) 쌍으로 직접 학습합니다. 구현이 간단하고 학습이 안정적이며, SFT 이후 추가 학습으로 응답 품질을 향상시킵니다."
+  },
+  {
+    "instruction": "Hallucination(환각)이란 무엇인가요?",
+    "input": "",
+    "output": "환각(Hallucination)은 LLM이 사실이 아닌 정보를 자신감 있게 생성하는 현상입니다. 학습 데이터에 없는 내용을 그럴듯하게 만들어내거나, 사실을 왜곡합니다. 해결 방법: 1) RAG로 외부 지식 검색 후 답변 생성, 2) temperature를 낮춰 보수적 생성, 3) 도메인 특화 데이터로 파인튜닝, 4) 출처 명시 프롬프트 사용, 5) 팩트 체킹 시스템 구축. 완전한 해결은 아직 연구 중인 과제입니다."
+  }
+]
