@@ -116,6 +116,18 @@
 
 ## 실습 환경 설정
 
+### 1. 저장소 복제
+
+```bash
+git clone https://github.com/choki0715/LLM_master_5days.git
+cd LLM_master_5days
+```
+
+> `git`이 없다면 먼저 설치하세요: `sudo apt update && sudo apt install -y git`
+> 이후 모든 명령과 노트북은 **저장소 최상위 폴더**(`LLM_master_5days/`)를 기준으로 실행합니다. 노트북이 읽는 실습 데이터 `data/samples/`도 저장소에 포함되어 있어 따로 내려받을 필요가 없습니다.
+
+### 2. 환경 구성
+
 깡통(clean) Ubuntu 상태에서 다음 스크립트로 실습 환경을 자동 구성합니다. `sudo` 없이 `uv`로 독립형 **Python 3.11**을 설치하고 가상환경을 생성합니다.
 
 ```bash
@@ -132,19 +144,24 @@ bash setup.sh
 > Python 3.11을 고정하는 이유: 최신 Python(3.14)에서는 gensim·auto-gptq·autoawq 등 다수 ML 패키지의 사전 빌드 휠이 없어 설치가 깨지기 때문입니다.
 > auto-gptq·autoawq는 구버전 torch(2.2)·transformers를 요구해 메인 환경(torch 2.11)과 공존이 불가하므로 별도 `venv-quant`로 분리합니다.
 
-### Day별 실행 요건
+### 3. API 키 설정
 
-| Day | GPU 필요 여부 | 필요한 외부 서비스 / API 키 |
+일부 세션은 외부 API를 사용합니다. 템플릿을 복사한 뒤 필요한 키만 채워 넣으세요.
+
+```bash
+cp .env.example .env
+```
+
+| 변수 | 사용하는 세션 | 발급처 |
 |---|---|---|
-| Day 1 | 파인튜닝 세션(09~12)은 GPU 권장 (소형 Qwen2.5-1.5B + LoRA) | LLM-as-a-Judge(13)에 `OPENAI_API_KEY` |
-| Day 2 | 양자화·Unsloth·vLLM 세션은 GPU 필요 | — |
-| Day 3 | DPO(04)·GRPO(07)는 GPU 필수 (4bit + LoRA, RTX 4060 8GB↑ 권장) | — |
-| Day 4 | 대부분 CPU 가능 | 그래프 RAG(06)는 **Neo4j**(Docker/Aura), 생성·평가는 `OPENAI_API_KEY` |
-| Day 5 | 대부분 API 기반, GPU 불필요 | `OPENAI_API_KEY`, Claude Code/바이브 코딩(03)에 `ANTHROPIC_API_KEY` |
+| `OPENAI_API_KEY` | LLM-as-a-Judge(D1-13), 합성 데이터 생성(D2-02), RAG 생성·평가(Day 4), 에이전트(Day 5) | [platform.openai.com](https://platform.openai.com/api-keys) |
+| `HF_TOKEN` | HuggingFace gated 모델 다운로드 · Hub 업로드(D1-04) | [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens) |
+| `ANTHROPIC_API_KEY` | Claude Code 기반 바이브 코딩(D5-03) | [console.anthropic.com](https://console.anthropic.com/settings/keys) |
 
-> API 키는 노트북과 같은 폴더의 `.env` 파일에 넣어두면 자동으로 로드됩니다.
+> `.env`를 저장소 최상위에 두면 각 노트북의 `load_dotenv()`가 자동으로 읽어 들입니다. `.env`는 `.gitignore`에 포함되어 커밋되지 않습니다.
+> 키가 없어도 GPU 기반 파인튜닝 세션(Day 1~3)은 대부분 그대로 실행됩니다.
 
-### 설치 확인
+### 4. 설치 확인
 
 환경 구성 후 [setup_check.ipynb](setup_check.ipynb)를 실행해 주요 패키지와 GPU/CUDA 인식 여부를 점검하세요.
 
@@ -152,6 +169,18 @@ bash setup.sh
 source venv/bin/activate
 jupyter notebook   # 또는 VS Code / JupyterLab 사용
 ```
+
+> 양자화 데모(Day 2 일부)는 커널을 `venv-quant`로 바꿔서 실행합니다.
+
+### Day별 실행 요건
+
+| Day | GPU 필요 여부 | 필요한 외부 서비스 / API 키 |
+|---|---|---|
+| Day 1 | 파인튜닝 세션(09~12)은 GPU 권장 (소형 Qwen2.5-1.5B + LoRA) | LLM-as-a-Judge(13)에 `OPENAI_API_KEY` |
+| Day 2 | 양자화·Unsloth·vLLM 세션은 GPU 필요 | 합성 데이터 생성(02)에 `OPENAI_API_KEY` |
+| Day 3 | DPO(04)·GRPO(07)는 GPU 필수 (4bit + LoRA, RTX 4060 8GB↑ 권장) | — |
+| Day 4 | 대부분 CPU 가능 | 그래프 RAG(06)는 **Neo4j**(Docker/Aura), 생성·평가는 `OPENAI_API_KEY` |
+| Day 5 | 대부분 API 기반, GPU 불필요 | `OPENAI_API_KEY`, Claude Code/바이브 코딩(03)에 `ANTHROPIC_API_KEY` |
 
 ---
 
