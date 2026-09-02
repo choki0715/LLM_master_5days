@@ -13,6 +13,7 @@ __pycache__/
 
 # 학습 산출물 / 체크포인트
 outputs/
+output/
 checkpoints/
 runs/
 wandb/
