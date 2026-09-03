@@ -34,3 +34,13 @@ CLAUDE.md
 .env
 .env.*
 !.env.example
+
+# 실행 부산물 (노트북/서버 실행 시 자동 생성)
+unsloth_compiled_cache/
+*.log
+method_a_result.json
+method_b_result.json
+
+# 셸 리다이렉트 사고로 생기는 숫자 이름 빈 파일
+/10
+/1531
