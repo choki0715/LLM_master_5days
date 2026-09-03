@@ -34,7 +34,7 @@ from langchain_core.documents import Document
 
 
 # === 0. 환경 설정 ================================================
-load_dotenv()
+load_dotenv(override=True)  # 셸에 남은 낡은 OPENAI_API_KEY 보다 .env 를 우선한다
 
 st.set_page_config(
     page_title="📚 PDF RAG 챗봇",
