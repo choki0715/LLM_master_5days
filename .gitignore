@@ -12,6 +12,7 @@ __pycache__/
 .ipynb_checkpoints/
 
 # 학습 산출물 / 체크포인트
+models/
 outputs/
 output/
 checkpoints/
